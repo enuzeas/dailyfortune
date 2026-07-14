@@ -95,7 +95,7 @@ export default function FortuneCard() {
           >
             {/* front */}
             <div
-              className="galaxy-bg tcg-radius absolute inset-0 overflow-hidden border-[6px] border-gold-frame p-3 [backface-visibility:hidden]"
+              className="rainbow-border tcg-radius absolute inset-0 overflow-hidden p-3 [backface-visibility:hidden]"
               style={{ transform: "rotateX(var(--tilt-x)) rotateY(var(--tilt-y))" }}
             >
               {/* hologram lives on this inner panel's own surface, not the outer frame */}
@@ -113,7 +113,7 @@ export default function FortuneCard() {
 
             {/* back */}
             <div
-              className="galaxy-bg tcg-radius absolute inset-0 overflow-hidden border-[6px] border-gold-frame p-3 [backface-visibility:hidden]"
+              className="rainbow-border tcg-radius absolute inset-0 overflow-hidden p-3 [backface-visibility:hidden]"
               style={{ transform: "rotateY(180deg) rotateX(var(--tilt-x)) rotateY(var(--tilt-y))" }}
             >
               <div className="relative h-full w-full overflow-hidden rounded-3xl border border-white/20">
@@ -153,7 +153,7 @@ export default function FortuneCard() {
 
       <button
         onClick={handleClick}
-        className="rounded-pill border-[3px] border-ink-black bg-lime-spark px-7 py-[18px] text-base font-bold text-ink-black transition hover:bg-[#c3d81f] active:translate-y-[2px]"
+        className="rainbow-button rounded-pill border-[3px] border-ink-black px-7 py-[18px] text-base font-bold text-ink-black transition hover:brightness-110 active:translate-y-[2px]"
       >
         {isBack ? "다시 뽑기" : "오늘의 운세 보기"}
       </button>
