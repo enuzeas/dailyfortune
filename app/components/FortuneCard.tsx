@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FORTUNES, LUCKY_ITEMS, LUCKY_COLORS, LUCKY_DIRECTIONS } from "@/app/data/fortune";
 
 function pick<T>(list: T[]): T {
@@ -25,6 +25,20 @@ function drawResult(): Result {
   };
 }
 
+// ponytail: [시각, 운세]만 저장. 행운 아이템까지 기록하려면 Entry에 필드 추가.
+type Entry = { at: string; fortune: string };
+
+const HISTORY_KEY = "fortune-history";
+
+function loadHistory(): Entry[] {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
 const TILE_STYLES = [
   { bg: "bg-lavender-mist", text: "text-ink-black" },
   { bg: "bg-mustard-pop", text: "text-ink-black" },
@@ -35,15 +49,26 @@ const TILE_STYLES = [
 export default function FortuneCard() {
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
+  const [history, setHistory] = useState<Entry[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isBack = (rotation / 180) % 2 === 1;
+
+  // 서버 렌더에는 localStorage가 없으니 마운트 후에 읽는다 (hydration mismatch 방지)
+  useEffect(() => setHistory(loadHistory()), []);
 
   function handleClick() {
     const next = rotation + 180;
     setRotation(next);
     if ((next / 180) % 2 === 1) {
-      setResult(drawResult());
+      const drawn = drawResult();
+      setResult(drawn);
+      const entry = { at: new Date().toISOString(), fortune: drawn.fortune };
+      setHistory((prev) => {
+        const updated = [entry, ...prev];
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+        return updated;
+      });
     }
   }
 
@@ -157,6 +182,32 @@ export default function FortuneCard() {
       >
         {isBack ? "다시 뽑기" : "오늘의 운세 보기"}
       </button>
+
+      {history.length > 0 && (
+        <section className="w-full max-w-2xl">
+          <h2 className="mb-3 text-lg font-extrabold text-white">내 운세 기록</h2>
+          <div className="overflow-hidden rounded-small border-2 border-ink-black bg-linen-canvas">
+            <table className="w-full text-left text-sm text-ink-black">
+              <thead className="bg-leaf-wash">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-2 font-bold">뽑은 시각</th>
+                  <th className="px-4 py-2 font-bold">운세</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((entry) => (
+                  <tr key={entry.at} className="border-t border-ink-black/10">
+                    <td className="whitespace-nowrap px-4 py-2 align-top text-sage-mute">
+                      {new Date(entry.at).toLocaleString("ko-KR")}
+                    </td>
+                    <td className="px-4 py-2">{entry.fortune}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
