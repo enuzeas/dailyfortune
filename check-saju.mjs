@@ -1,6 +1,8 @@
-// node check-saju.mjs — 사주 운세 로직 자체 점검 (DB/네트워크 불필요)
+// node --experimental-strip-types check-saju.mjs — 사주 운세 로직 자체 점검 (DB/네트워크 불필요)
 import assert from "node:assert/strict";
 import { getFourPillars, getRelation, toHangul, STEM_INFO } from "@orrery/core";
+// app/data/fortune.ts 는 별칭 import 가 없는 leaf 파일이라 실제 데이터를 그대로 불러와 검증한다.
+import { SIPSIN_GROUP, GROUP_CYCLE, TOPICS, RELATION_READING } from "./app/data/fortune.ts";
 
 // app/lib/saju.ts 와 같은 계산. TS 를 그대로 못 불러오므로 여기서 재현한다.
 const STEMS = "甲乙丙丁戊己庚辛壬癸".split("");
@@ -51,6 +53,32 @@ for (const s of STEMS) {
 
 // 6) 한글 변환은 글자 단위
 assert.equal([..."乙未"].map(toHangul).join(""), "을미");
+
+// 7) 십신 10종이 전부 SIPSIN_GROUP 5개 그룹 중 하나에 속해야 한다 (분야 매칭의 전제)
+for (const s of SIPSIN) assert.ok(GROUP_CYCLE.includes(SIPSIN_GROUP[s]), `그룹 없는 십신: ${s}`);
+
+// 8) app/lib/saju.ts 의 topicReading 과 같은 공식. diff 5종 전부 문구가 있어야 한다.
+const relationDiff = (todayGroup, topicGroup) => {
+  const t = GROUP_CYCLE.indexOf(todayGroup);
+  const p = GROUP_CYCLE.indexOf(topicGroup);
+  return (((p - t) % 5) + 5) % 5;
+};
+for (let d = 0; d < 5; d++) assert.ok(RELATION_READING[d], `관계 문구 없음: diff=${d}`);
+
+// 9) 관계 공식이 사주 이론과 맞는지 두 지점으로 확인.
+//    비겁(0)은 재성(2)을 극한다 → 오늘이 비겁이고 분야가 재성이면 diff=2("오늘이 분야를 누른다")
+assert.equal(relationDiff("비겁", "재성"), 2);
+//    재성(2)은 비겁(0)에게 극을 당한다(반대 방향) → 오늘이 재성, 분야가 비겁이면 diff=3("분야가 오늘을 누른다")
+assert.equal(relationDiff("재성", "비겁"), 3);
+// 같은 그룹이면 diff=0 (정면으로 들어온다)
+assert.equal(relationDiff("재성", "재성"), 0);
+
+// 10) 질문 키워드가 의도한 분야로 매칭되는지 (연애/재물이 둘 다 '재성'이라 라벨로만 구분됨)
+const matchTopic = (q) => TOPICS.find((t) => t.keywords.some((k) => q.includes(k))) ?? null;
+assert.equal(matchTopic("이직할까 고민이에요")?.label, "일·직장");
+assert.equal(matchTopic("소개팅 잘 될까요")?.label, "연애");
+assert.equal(matchTopic("이번 시험 어떨까요")?.label, "공부·시험");
+assert.equal(matchTopic("그냥 오늘 하루 어때요")?.label, undefined, "매칭 안 되면 null(일반 운세)이어야");
 
 const myGanzi = dayGanzi(...birth);
 console.log(

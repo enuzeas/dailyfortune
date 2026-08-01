@@ -64,6 +64,7 @@ export default function FortuneCard() {
   const [signingUp, setSigningUp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [birthDraft, setBirthDraft] = useState("");
+  const [question, setQuestion] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isBack = (rotation / 180) % 2 === 1;
@@ -118,14 +119,15 @@ export default function FortuneCard() {
     const [y, m, d] = birth.split("-").map(Number);
     let drawn: Daily;
     try {
-      drawn = dailyFortune({ year: y, month: m, day: d }, new Date());
+      drawn = dailyFortune({ year: y, month: m, day: d }, new Date(), question);
     } catch (err) {
       return setError(`운세 계산 실패: ${(err as Error).message}`);
     }
     setResult(drawn);
     setError("");
     // 뽑는 즉시 저장. 실패하면 조용히 넘기지 않고 화면에 알린다.
-    saveFortune(myName, `[${drawn.sipsin}] ${drawn.fortune}`).then(
+    const tag = drawn.topic ?? drawn.sipsin;
+    saveFortune(myName, `[${tag}] ${drawn.fortune}`).then(
       (row) => {
         setHistory((prev) => [row, ...prev]);
         // 내가 넣은 1건이니 다시 세지 않고 더한다
@@ -218,7 +220,7 @@ export default function FortuneCard() {
                   {result && (
                     <>
                       <span className="rounded-pill border-2 border-ink-black bg-mustard-pop px-3 py-1 text-sm font-extrabold text-ink-black">
-                        {result.sipsin}
+                        {result.topic ?? result.sipsin}
                       </span>
                       <p className="text-sm leading-relaxed font-medium text-white">
                         {result.fortune}
@@ -282,6 +284,16 @@ export default function FortuneCard() {
               {birth ? "변경" : "저장"}
             </button>
           </form>
+
+          {/* 비우면 일반 운세, 채우면 연애/재물/직장 등 분야 매칭 — TOPICS 키워드 참고 */}
+          <input
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            maxLength={40}
+            placeholder="알고 싶은 내용 (예: 연애, 이직, 시험) — 비우면 종합운세"
+            aria-label="알고 싶은 내용"
+            className="w-full max-w-xs rounded-pill border-2 border-ink-black bg-linen-canvas px-5 py-2.5 text-center text-sm text-ink-black placeholder:text-sage-mute"
+          />
 
           <button
             onClick={handleClick}
