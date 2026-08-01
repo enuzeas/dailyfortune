@@ -47,7 +47,7 @@ export default function ZiweiDeck({ birth, birthTime, gender }: Props) {
 
   return (
     <section className="flex w-full max-w-2xl flex-col items-center gap-4">
-      <h2 className="text-lg font-extrabold text-white">자미두수 명반 — 카드를 눌러 궁을 열어보세요</h2>
+      <h2 className="text-lg font-extrabold text-white">자미두수 명반 — 궁금한 카드를 눌러보세요</h2>
       <div className="grid w-full grid-cols-3 gap-3 sm:grid-cols-4">
         {deck.map((card) => (
           <PalaceCardView
@@ -78,20 +78,22 @@ function PalaceCardView({
         className="relative aspect-[0.718] w-full cursor-pointer transition-transform duration-500 ease-out [transform-style:preserve-3d]"
         style={{ transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)" }}
       >
-        {/* front (face-down) */}
+        {/* front (face-down) — 궁 이름 대신 그 궁이 담당하는 질문을 보여준다 */}
         <div className="rainbow-border tcg-radius absolute inset-0 overflow-hidden p-1 [backface-visibility:hidden]">
-          <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-2xl border border-white/20">
-            <span className="text-xl">🔮</span>
-            {card.isMingGong && <span className="text-[9px] text-mustard-pop">★ 명궁</span>}
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/20 p-2 text-center">
+            <span className="text-lg">🔮</span>
+            <p className="text-[11px] leading-tight font-bold text-white">{card.question}</p>
+            {card.isMingGong && <span className="text-[9px] text-mustard-pop">★</span>}
           </div>
         </div>
 
-        {/* back (revealed) */}
+        {/* back (revealed) — 질문에 대한 답: 궁 이름·별·해석 */}
         <div
           className="rainbow-border tcg-radius absolute inset-0 overflow-hidden p-1 [backface-visibility:hidden]"
           style={{ transform: "rotateY(180deg)" }}
         >
           <div className="flex h-full w-full flex-col items-center justify-start gap-1 overflow-hidden rounded-2xl border border-white/20 bg-linen-canvas p-2 text-center text-ink-black">
+            <p className="text-[9px] leading-tight text-sage-mute italic">Q. {card.question}</p>
             <p className="text-[11px] leading-tight font-extrabold">
               {card.isMingGong && "★ "}
               {card.label}

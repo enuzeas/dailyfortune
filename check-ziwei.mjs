@@ -1,7 +1,7 @@
 // node --experimental-strip-types check-ziwei.mjs — 자미두수 12궁 덱 점검 (DB/네트워크 불필요)
 import assert from "node:assert/strict";
 import { createChart } from "@orrery/core";
-import { PALACE_KO, PALACE_MEANING, MAIN_STAR_KO, MINOR_STAR_KO, starLabel } from "./app/data/ziwei.ts";
+import { PALACE_KO, PALACE_QUESTION, PALACE_MEANING, MAIN_STAR_KO, MINOR_STAR_KO, starLabel } from "./app/data/ziwei.ts";
 
 // app/lib/ziwei.ts 와 같은 계산. 별칭(@/) import 때문에 여기서 재현한다.
 function ziweiDeck(birth, time, isMale) {
@@ -9,6 +9,7 @@ function ziweiDeck(birth, time, isMale) {
   return Object.values(chart.palaces).map((p) => ({
     key: p.name,
     label: PALACE_KO[p.name] ?? p.name,
+    question: PALACE_QUESTION[p.name] ?? "",
     meaning: PALACE_MEANING[p.name] ?? "",
     isMingGong: p.name === "命宮",
     isShenGong: p.isShenGong,
@@ -25,11 +26,14 @@ const PALACE_KEYS = [
   "遷移", "交友", "官祿", "田宅", "福德", "父母",
 ];
 
-// 1) 12궁 전부 한글 라벨/해석이 있어야 한다
+// 1) 12궁 전부 한글 라벨/질문/해석이 있어야 한다 (질문 = 카드 앞면, 해석 = 뒤집었을 때 답)
 for (const k of PALACE_KEYS) {
   assert.ok(PALACE_KO[k], `PALACE_KO 누락: ${k}`);
+  assert.ok(PALACE_QUESTION[k], `PALACE_QUESTION 누락: ${k}`);
   assert.ok(PALACE_MEANING[k], `PALACE_MEANING 누락: ${k}`);
 }
+// 질문은 서로 달라야 한다 — 같은 문구가 두 궁에 붙으면 카드 앞면만 보고는 구분이 안 된다
+assert.equal(new Set(Object.values(PALACE_QUESTION)).size, PALACE_KEYS.length, "중복된 질문이 있다");
 
 // 2) 14주성 전부 이름+특징이 있어야 한다 (README 가 내세우는 핵심 기능)
 const MAIN_STARS = [
@@ -54,6 +58,7 @@ assert.equal(deck.filter((c) => c.isMingGong).length, 1, "명궁이 정확히 �
 assert.equal(deck.filter((c) => c.isShenGong).length, 1, "신궁이 정확히 하나여야 한다(12궁 중 하나와 겹침)");
 for (const c of deck) {
   assert.ok(c.label, `라벨 없는 궁: ${c.key}`);
+  assert.ok(c.question, `질문 없는 궁: ${c.key}`);
   assert.ok(c.meaning, `해석 없는 궁: ${c.key}`);
   assert.ok(c.stars.length > 0, `별이 하나도 없는 궁: ${c.key}`);
 }

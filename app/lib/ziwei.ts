@@ -1,9 +1,10 @@
 import { createChart } from "@orrery/core";
-import { PALACE_KO, PALACE_MEANING, MAIN_STAR_KO, starLabel } from "@/app/data/ziwei";
+import { PALACE_KO, PALACE_QUESTION, PALACE_MEANING, MAIN_STAR_KO, starLabel } from "@/app/data/ziwei";
 
 export type PalaceCard = {
   key: string;
   label: string;
+  question: string;
   meaning: string;
   isMingGong: boolean;
   isShenGong: boolean;
@@ -23,6 +24,7 @@ export function ziweiDeck(
   return Object.values(chart.palaces).map((p) => ({
     key: p.name,
     label: PALACE_KO[p.name] ?? p.name,
+    question: PALACE_QUESTION[p.name] ?? "",
     meaning: PALACE_MEANING[p.name] ?? "",
     isMingGong: p.name === "命宮",
     isShenGong: p.isShenGong,
