@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { dailyFortune, type Daily } from "@/app/lib/saju";
+import AskChat from "@/app/components/AskChat";
 
 // 생년월일은 계정에 붙는다 — user_metadata 를 쓰면 테이블도 RLS 정책도 안 늘어난다.
 function readBirth(session: Session | null): string {
@@ -353,6 +354,8 @@ export default function FortuneCard() {
           {notice}
         </p>
       )}
+
+      {session && <AskChat session={session} birth={birth} />}
 
       {history.length > 0 && (
         <section className="w-full max-w-2xl">

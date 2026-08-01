@@ -53,6 +53,20 @@ function dayStem(y: number, m: number, d: number): { ganzi: string; stem: string
 
 const hangul = (ganzi: string) => [...ganzi].map(toHangul).join("");
 
+/** 자유 질문 답변용 사주 정보. AI 프롬프트에 그대로 박아 넣을 사실(fact) 텍스트. */
+export function factsForPrompt(birth: { year: number; month: number; day: number }, on: Date): string {
+  const [yearGanzi, monthGanzi, dayGanzi] = getFourPillars(birth.year, birth.month, birth.day, NOON, 0);
+  const dayMaster = dayGanzi[0];
+  const today = dayStem(on.getFullYear(), on.getMonth() + 1, on.getDate());
+  const info = STEM_INFO[dayMaster];
+  const sipsinOf = (stem: string) => getRelation(dayMaster, stem)?.hangul ?? "?";
+
+  return [
+    `년주 ${hangul(yearGanzi)}(십신 ${sipsinOf(yearGanzi[0])}), 월주 ${hangul(monthGanzi)}(십신 ${sipsinOf(monthGanzi[0])}), 일주 ${hangul(dayGanzi)} — 일간은 ${hangul(dayMaster)}(${ELEMENT_LUCK[info.element].name}, ${info.yinyang === "+" ? "양" : "음"}).`,
+    `오늘(${on.getFullYear()}-${on.getMonth() + 1}-${on.getDate()}) 일진은 ${hangul(today.ganzi)}, 일간 기준 오늘의 십신은 ${sipsinOf(today.stem)}.`,
+  ].join("\n");
+}
+
 /**
  * 생년월일 + 기준일 → 그 날의 운세. 같은 입력이면 항상 같은 결과.
  * question 에 분야 키워드(연애/재물/직장 등)가 있으면 그 분야로, 없으면 일반 운세로 답한다.
