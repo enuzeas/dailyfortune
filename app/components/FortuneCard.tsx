@@ -20,9 +20,15 @@ function unwrap<T>({ data, error }: { data: T | null; error: { message: string }
   return data as T;
 }
 
-async function loadHistory(): Promise<Entry[]> {
+// 카운터(countToday)는 전체 공개로 두고, 기록 표만 본인 것으로 좁힌다.
+async function loadHistory(userId: string): Promise<Entry[]> {
   return unwrap(
-    await supabase.from("fortunes").select("*").order("drawn_at", { ascending: false }).limit(20),
+    await supabase
+      .from("fortunes")
+      .select("*")
+      .eq("user_id", userId)
+      .order("drawn_at", { ascending: false })
+      .limit(20),
   );
 }
 
@@ -74,12 +80,16 @@ export default function FortuneCard() {
   const birth = readBirth(session);
 
   useEffect(() => {
-    loadHistory().then(setHistory, (e) => setError(`기록 불러오기 실패: ${e.message}`));
     countToday().then(setTodayCount, () => {});
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const fetchHistory = session?.user.id ? loadHistory(session.user.id) : Promise.resolve([]);
+    fetchHistory.then(setHistory, (e) => setError(`기록 불러오기 실패: ${e.message}`));
+  }, [session]);
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
