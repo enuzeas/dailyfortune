@@ -6,10 +6,11 @@ import { supabase } from "@/app/lib/supabase";
 import { dailyFortune, type Daily } from "@/app/lib/saju";
 import { TOPICS } from "@/app/data/fortune";
 import AskChat from "@/app/components/AskChat";
+import ZiweiDeck from "@/app/components/ZiweiDeck";
 
-// 생년월일은 계정에 붙는다 — user_metadata 를 쓰면 테이블도 RLS 정책도 안 늘어난다.
-function readBirth(session: Session | null): string {
-  const v = session?.user.user_metadata?.birth;
+// 생년월일/시각/성별은 계정에 붙는다 — user_metadata 를 쓰면 테이블도 RLS 정책도 안 늘어난다.
+function readMeta(session: Session | null, key: string): string {
+  const v = session?.user.user_metadata?.[key];
   return typeof v === "string" ? v : "";
 }
 
@@ -72,13 +73,17 @@ export default function FortuneCard() {
   const [signingUp, setSigningUp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [birthDraft, setBirthDraft] = useState("");
+  const [birthTimeDraft, setBirthTimeDraft] = useState("");
+  const [genderDraft, setGenderDraft] = useState("");
   const [question, setQuestion] = useState("");
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isBack = (rotation / 180) % 2 === 1;
   // 이름은 계정에서 온다 — 입력칸 없앰. 표시명이 따로 필요하면 user_metadata 로.
   const myName = session?.user.email?.split("@")[0] ?? "";
-  const birth = readBirth(session);
+  const birth = readMeta(session, "birth");
+  const birthTime = readMeta(session, "birthTime");
+  const gender = readMeta(session, "gender");
 
   useEffect(() => {
     countToday().then(setTodayCount, () => {});
@@ -108,15 +113,21 @@ export default function FortuneCard() {
     else setPassword("");
   }
 
-  // 생년월일은 계정에 한 번만 저장한다. 바꾸면 다음 뽑기부터 반영.
+  // 생년월일/시각/성별을 한 번에 저장한다. 시각·성별은 자미두수 전용이라 비워도 된다.
   async function handleBirthSave(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const { error } = await supabase.auth.updateUser({ data: { birth: birthDraft } });
+    const { error } = await supabase.auth.updateUser({
+      data: {
+        birth: birthDraft || birth,
+        birthTime: birthTimeDraft || birthTime,
+        gender: genderDraft || gender,
+      },
+    });
     setBusy(false);
-    if (error) return setError(`생년월일 저장 실패: ${error.message}`);
-    setNotice("생년월일을 저장했어요. 이제 뽑아보세요.");
+    if (error) return setError(`정보 저장 실패: ${error.message}`);
+    setNotice("저장했어요.");
   }
 
   function handleClick() {
@@ -276,8 +287,9 @@ export default function FortuneCard() {
             </button>
           </p>
 
-          {/* 네이티브 date 입력 — 달력 UI를 라이브러리로 만들 이유가 없다 */}
-          <form onSubmit={handleBirthSave} className="flex items-center gap-2">
+          {/* 네이티브 date/time 입력 — 달력·시계 UI를 라이브러리로 만들 이유가 없다.
+              시각·성별은 자미두수 전용(생년월일만으로도 사주는 계산됨) — 비워도 저장 가능. */}
+          <form onSubmit={handleBirthSave} className="flex flex-wrap items-center justify-center gap-2">
             <input
               type="date"
               required
@@ -288,9 +300,33 @@ export default function FortuneCard() {
               aria-label="생년월일"
               className="rounded-pill border-2 border-ink-black bg-linen-canvas px-4 py-2 text-sm text-ink-black"
             />
+            <input
+              type="time"
+              value={birthTimeDraft || birthTime}
+              onChange={(e) => setBirthTimeDraft(e.target.value)}
+              aria-label="태어난 시각 (자미두수용, 선택)"
+              title="태어난 시각 — 자미두수를 보려면 필요해요"
+              className="rounded-pill border-2 border-ink-black bg-linen-canvas px-4 py-2 text-sm text-ink-black"
+            />
+            <select
+              value={genderDraft || gender}
+              onChange={(e) => setGenderDraft(e.target.value)}
+              aria-label="성별 (자미두수용, 선택)"
+              title="성별 — 자미두수를 보려면 필요해요"
+              className="rounded-pill border-2 border-ink-black bg-linen-canvas px-4 py-2 text-sm text-ink-black"
+            >
+              <option value="">성별</option>
+              <option value="M">남</option>
+              <option value="F">여</option>
+            </select>
             <button
               type="submit"
-              disabled={busy || (birthDraft || birth) === birth}
+              disabled={
+                busy ||
+                ((birthDraft || birth) === birth &&
+                  (birthTimeDraft || birthTime) === birthTime &&
+                  (genderDraft || gender) === gender)
+              }
               className="rounded-pill border-2 border-ink-black bg-leaf-wash px-4 py-2 text-sm font-bold text-ink-black disabled:opacity-40"
             >
               {birth ? "변경" : "저장"}
@@ -370,6 +406,8 @@ export default function FortuneCard() {
           {notice}
         </p>
       )}
+
+      {session && <ZiweiDeck birth={birth} birthTime={birthTime} gender={gender} />}
 
       {session && (
         <AskChat
