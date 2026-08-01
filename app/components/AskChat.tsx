@@ -4,7 +4,14 @@ import { useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { MAX_QUESTION_LEN } from "@/app/lib/ask";
 
-export default function AskChat({ session, birth }: { session: Session; birth: string }) {
+type Props = {
+  session: Session;
+  birth: string;
+  /** 답변을 성공적으로 받으면 호출 — 저장은 부모(FortuneCard)가 기존 saveFortune 경로로 한다. */
+  onAnswered: (question: string, answer: string) => void;
+};
+
+export default function AskChat({ session, birth, onAnswered }: Props) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -15,18 +22,20 @@ export default function AskChat({ session, birth }: { session: Session; birth: s
     setLoading(true);
     setError("");
     setAnswer(null);
+    const asked = question.trim();
     const res = await fetch("/api/ask", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question: asked }),
     });
     const data = await res.json().catch(() => ({}));
     setLoading(false);
     if (!res.ok) return setError(data.error ?? `요청 실패 (${res.status})`);
     setAnswer(data.answer);
+    onAnswered(asked, data.answer);
   }
 
   return (

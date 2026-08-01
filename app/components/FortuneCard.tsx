@@ -174,7 +174,7 @@ export default function FortuneCard() {
     <div className="flex flex-col items-center gap-8">
       {todayCount !== null && (
         <p className="rounded-pill border-2 border-ink-black bg-mustard-pop px-4 py-1.5 text-sm font-bold text-ink-black">
-          오늘 운세를 뽑은 사람 {todayCount}명
+          오늘 운세를 확인한 사람 {todayCount}명
         </p>
       )}
 
@@ -355,7 +355,22 @@ export default function FortuneCard() {
         </p>
       )}
 
-      {session && <AskChat session={session} birth={birth} />}
+      {session && (
+        <AskChat
+          session={session}
+          birth={birth}
+          onAnswered={(question, answer) => {
+            // 카드 뽑기와 같은 경로로 저장 — 기록 표와 카운터에 그대로 합류한다.
+            saveFortune(myName, `[질문] ${question} → ${answer}`).then(
+              (row) => {
+                setHistory((prev) => [row, ...prev]);
+                setTodayCount((c) => (c === null ? c : c + 1));
+              },
+              (e) => setError(`저장 실패: ${e.message}`),
+            );
+          }}
+        />
+      )}
 
       {history.length > 0 && (
         <section className="w-full max-w-2xl">
