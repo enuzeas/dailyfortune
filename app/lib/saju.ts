@@ -36,6 +36,13 @@ function matchTopic(question: string) {
   return TOPICS.find((t) => t.keywords.some((k) => q.includes(k))) ?? null;
 }
 
+// 마지막 음절의 받침 유무로 을/를 조사를 고른다 (완성형 한글 범위 밖이면 받침 없다고 본다).
+function hasBatchim(word: string): boolean {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return false;
+  return code % 28 !== 0;
+}
+
 // 오늘 기운 그룹 → 질문 분야 그룹 사이의 생/극 관계로 해석 문구를 고른다.
 // GROUP_CYCLE 상 인덱스 차이(분야 - 오늘, 5로 나눈 나머지)가 관계를 결정한다.
 // 0=같은 기운, 1=오늘이 분야를 생함, 2=오늘이 분야를 극함, 3=분야가 오늘을 극함, 4=분야가 오늘을 생함.
@@ -43,7 +50,9 @@ function topicReading(todayGroup: string, topicGroup: string, label: string): st
   const todayIdx = GROUP_CYCLE.indexOf(todayGroup as (typeof GROUP_CYCLE)[number]);
   const topicIdx = GROUP_CYCLE.indexOf(topicGroup as (typeof GROUP_CYCLE)[number]);
   const diff = (((topicIdx - todayIdx) % 5) + 5) % 5;
-  return RELATION_READING[diff].replace("{분야}", label);
+  return RELATION_READING[diff]
+    .replace("{분야}", label)
+    .replace("{을}", hasBatchim(label) ? "을" : "를");
 }
 
 function dayStem(y: number, m: number, d: number): { ganzi: string; stem: string } {

@@ -80,6 +80,28 @@ assert.equal(matchTopic("소개팅 잘 될까요")?.label, "연애");
 assert.equal(matchTopic("이번 시험 어떨까요")?.label, "공부·시험");
 assert.equal(matchTopic("그냥 오늘 하루 어때요")?.label, undefined, "매칭 안 되면 null(일반 운세)이어야");
 
+// 11) 실제 버그였던 사례: "일" 한 글자 키워드가 "내일"/"생일"처럼 무관한 문장에 오매칭됐다.
+//     지금은 UI가 자유 텍스트 대신 드롭다운(TOPICS 라벨 그대로)을 쓰므로, 각 라벨이
+//     자기 자신의 분야로만 매칭되는지가 실제로 중요한 불변 조건이다.
+for (const t of TOPICS) {
+  assert.equal(matchTopic(t.label)?.label, t.label, `드롭다운 값 "${t.label}" 이 다른 분야로 새버림`);
+}
+// 여전히 짧은 키워드가 무관한 단어에 오매칭되지 않는지도 확인
+assert.equal(matchTopic("내일 뭐하지")?.label, undefined, "'일' 키워드가 '내일'에 오매칭됨");
+assert.equal(matchTopic("생일 축하해")?.label, undefined, "'일' 키워드가 '생일'에 오매칭됨");
+
+// 12) 을/를 조사 — 받침 있는 라벨에 "를"을 붙이면 비문이 된다 (app/lib/saju.ts 의 hasBatchim 과 같은 공식).
+function hasBatchim(word) {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0;
+}
+assert.equal(hasBatchim("연애"), false, "'연애'는 받침 없음 → 를");
+for (const label of ["재물", "일·직장", "공부·시험", "건강·표현", "사람·경쟁"]) {
+  assert.ok(hasBatchim(label), `'${label}' 은 받침 있음 → 을 이어야 하는데 아니라고 나옴`);
+}
+assert.ok(RELATION_READING[1].includes("{을}"), "diff=1 템플릿에 {을} 자리표시자가 빠졌다");
+assert.ok(RELATION_READING[2].includes("{을}"), "diff=2 템플릿에 {을} 자리표시자가 빠졌다");
+
 const myGanzi = dayGanzi(...birth);
 console.log(
   `✅ 사주 로직 OK — 1990-05-15 생(일주 ${[...myGanzi].map(toHangul).join("")}) / 2026-08-01 → ${a}, 08-06 → ${b}`,

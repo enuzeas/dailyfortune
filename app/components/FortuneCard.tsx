@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/app/lib/supabase";
 import { dailyFortune, type Daily } from "@/app/lib/saju";
+import { TOPICS } from "@/app/data/fortune";
 import AskChat from "@/app/components/AskChat";
 
 // 생년월일은 계정에 붙는다 — user_metadata 를 쓰면 테이블도 RLS 정책도 안 늘어난다.
@@ -296,15 +297,20 @@ export default function FortuneCard() {
             </button>
           </form>
 
-          {/* 비우면 일반 운세, 채우면 연애/재물/직장 등 분야 매칭 — TOPICS 키워드 참고 */}
-          <input
+          {/* 자유 텍스트 대신 목록에서 고른다 — 어떤 문장을 적어도 매칭이 잘 되던 문제를 원천 차단 */}
+          <select
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            maxLength={40}
-            placeholder="알고 싶은 내용 (예: 연애, 이직, 시험) — 비우면 종합운세"
             aria-label="알고 싶은 내용"
-            className="w-full max-w-xs rounded-pill border-2 border-ink-black bg-linen-canvas px-5 py-2.5 text-center text-sm text-ink-black placeholder:text-sage-mute"
-          />
+            className="w-full max-w-xs rounded-pill border-2 border-ink-black bg-linen-canvas px-5 py-2.5 text-center text-sm text-ink-black"
+          >
+            <option value="">종합운세</option>
+            {TOPICS.map((t) => (
+              <option key={t.label} value={t.label}>
+                {t.label}
+              </option>
+            ))}
+          </select>
 
           <button
             onClick={handleClick}
